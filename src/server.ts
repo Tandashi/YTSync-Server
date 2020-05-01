@@ -1,5 +1,7 @@
 import http from 'http';
 import socketIO from 'socket.io';
+import RoomService from './service/room-service';
+import { Role } from './model/roles';
 
 const port = process.env.port || 8080;
 
@@ -15,18 +17,19 @@ const io = socketIO(server, {
 });
 
 io.of(/.*/).on('connection', (socket: SocketIO.Socket) => {
-
     console.log(`Connection: ${socket.id}`);
 
+    const room = RoomService.getRoom(socket);
+
     socket.on('message', (data) => {
-        socket.nsp.emit('message', data);
+        if(room.getClient(socket).role === Role.HOST) {
+            room.sendToAllExcept(data, [socket]);
+        }
     });
 
     socket.on('disconnect', () => {
         console.log(`Disconnect: ${socket.id}`);
     });
-
-    socket.emit('message', 'pause');
 
 });
 
