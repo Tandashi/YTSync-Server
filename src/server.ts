@@ -1,7 +1,7 @@
 import http from 'http';
 import socketIO from 'socket.io';
 import RoomService from './service/room-service';
-import { Role } from './model/roles';
+import { VideoState, Message } from './model/messages';
 
 const port = process.env.port || 8080;
 
@@ -22,8 +22,30 @@ io.of(/.*/).on('connection', (socket: SocketIO.Socket) => {
     const room = RoomService.getRoom(socket);
 
     socket.on('message', (data) => {
-        if(room.getClient(socket).role === Role.HOST) {
+        if(room.isHost(socket)) {
+            try {
+                const [command, cmdData] = data.split(" ");
+                const videoTime = parseFloat(cmdData);
+                room.updateVideoTime(videoTime);
+
+                switch(command) {
+                    case Message.PLAY:
+                        room.updateVideoState(VideoState.PLAYING);
+                        break;
+                    case Message.PAUSE:
+                        room.updateVideoState(VideoState.PAUSED);
+                        break;
+                }
+            }
+            catch(e) {
+                console.error(e);
+                return;
+            }
+
             room.sendToAllExcept(data, [socket]);
+        }
+        else {
+            room.syncClienToRoom(socket);
         }
     });
 

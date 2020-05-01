@@ -21,6 +21,7 @@ export default class RoomService {
         }
         else {
             room.addClient(socket, Role.MEMBER);
+            room.syncClienToRoom(socket);
         }
 
         return room;
