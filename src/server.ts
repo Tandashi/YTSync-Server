@@ -25,15 +25,18 @@ io.of(/.*/).on('connection', (socket: SocketIO.Socket) => {
         if(room.isHost(socket)) {
             try {
                 const [command, cmdData] = data.split(" ");
-                const videoTime = parseFloat(cmdData);
-                room.updateVideoTime(videoTime);
 
                 switch(command) {
                     case Message.PLAY:
+                        room.updateVideoTime(parseFloat(cmdData));
                         room.updateVideoState(VideoState.PLAYING);
                         break;
                     case Message.PAUSE:
+                        room.updateVideoTime(parseFloat(cmdData));
                         room.updateVideoState(VideoState.PAUSED);
+                        break;
+                    case Message.PLAY_VIDEO:
+                        room.setCurrentVideo(cmdData, true);
                         break;
                 }
             }

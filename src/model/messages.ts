@@ -3,7 +3,8 @@ import { Room } from "./room";
 export enum Message {
     PLAY = "play",
     PAUSE = "pause",
-    SEEK = "seek"
+    SEEK = "seek",
+    PLAY_VIDEO = "play-video"
 }
 
 export enum VideoState {
@@ -11,8 +12,19 @@ export enum VideoState {
     PAUSED = "pause"
 }
 
-export function sendVideoStateMessageToSocket(socket: SocketIO.Socket, state: VideoState, data: string): void {
-    const message = `${state} ${data}`;
+export function sendMessageToSocket(socket: SocketIO.Socket, type: Message, data: string): void {
+    const message = `${type} ${data}`;
     console.log(`Sending Message: ${message}`);
     socket.emit('message', message);
+}
+
+export function getMessageFromVideoState(state: VideoState): Message | undefined {
+    switch(state) {
+        case VideoState.PLAYING:
+            return Message.PLAY;
+        case VideoState.PAUSED:
+            return Message.PAUSE;
+    }
+
+    return undefined;
 }

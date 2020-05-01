@@ -2,11 +2,13 @@ import moment from 'moment';
 
 import { Role } from "./roles";
 import Client from "./client";
-import { sendVideoStateMessageToSocket, VideoState } from "./messages";
+import { sendMessageToSocket, VideoState, Message, getMessageFromVideoState } from "./messages";
 
 export class Room {
     private clients: Client[] = [];
 
+    private videoQueue: string[] = [];
+    private currentVideoQueueIndex: number = -1;
     private state: VideoState = VideoState.PAUSED;
     private lastTimeUpdate: number = 0;
     private lastTime: number = 0;
@@ -80,9 +82,38 @@ export class Room {
         return this.lastTime + ((currentTime - this.lastTimeUpdate) / 1000);
     }
 
+    public setCurrentVideo(videoId: string, addIfNotExists: boolean = true) {
+        let index = this.videoQueue.indexOf(videoId);
+
+        if(index === -1 && !addIfNotExists)
+            return;
+
+        if(index === -1 && addIfNotExists) {
+            this.videoQueue.push(videoId);
+            index = this.videoQueue.length - 1;
+        }
+
+        this.currentVideoQueueIndex = index;
+        console.log(`Current Video: ${this.videoQueue[this.currentVideoQueueIndex]}`);
+    }
+
+    public updateVideoQueueIndex(index: number) {
+        if (this.videoQueue.length - 1 > index)
+            return;
+
+        this.currentVideoQueueIndex = index;
+    }
+
+    public addVideoToQueue(videoId: string) {
+        this.videoQueue.push(videoId);
+    }
+
     public syncClienToRoom(socket: SocketIO.Socket): void {
+        sendMessageToSocket(socket, Message.PLAY_VIDEO, this.videoQueue[this.currentVideoQueueIndex]);
+
+        const message = getMessageFromVideoState(this.state);
         const videoTime = this.getVideoTime().toString();
-        console.log(`Syncing Client to: ${this.state} | ${videoTime}`);
-        sendVideoStateMessageToSocket(socket, this.state, videoTime);
+        console.log(`Syncing Client to: ${message} | ${videoTime}`);
+        sendMessageToSocket(socket, message, videoTime);
     }
 }
