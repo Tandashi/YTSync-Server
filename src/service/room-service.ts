@@ -4,6 +4,11 @@ import { Role } from "../model/roles";
 export default class RoomService {
     private static rooms: Room[] = [];
 
+    public static removeRoom(room: Room) {
+        console.log(`Removing room: ${room.nsp.name}`);
+        this.rooms = this.rooms.filter((r) => r.nsp.name !== room.nsp.name);
+    }
+
     /**
      * Get the Room for the given SocketIO.Socket
      *
@@ -11,7 +16,7 @@ export default class RoomService {
      *
      * @return The Room
      */
-    static getRoom(socket: SocketIO.Socket): Room {
+    public static getRoom(socket: SocketIO.Socket): Room {
         let room = this.getRoomById(socket.nsp.name);
 
         if (room === null) {
@@ -34,7 +39,7 @@ export default class RoomService {
      *
      * @return The Room or null if it could not be found
      */
-    static getRoomById(id: string): Room | null {
+    public static getRoomById(id: string): Room | null {
         for (const room of this.rooms) {
             if (room.nsp.name === id)
                 return room;

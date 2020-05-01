@@ -30,6 +30,17 @@ export class Room {
     }
 
     public removeClient(socket: SocketIO.Socket): void {
+        // Set new host if we remove host and people are left
+        if(this.isHost(socket) && this.clients.length > 1) {
+            for(const client of this.clients) {
+                if(client.socket.id !== socket.id) {
+                    console.log(`Client is new host: ${client.socket.id}`);
+                    client.role = Role.HOST;
+                    break;
+                }
+            }
+        }
+
         this.clients = this.clients.filter((c) => c.socket.id !== socket.id);
     }
 

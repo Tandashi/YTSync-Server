@@ -51,6 +51,11 @@ io.of(/.*/).on('connection', (socket: SocketIO.Socket) => {
 
     socket.on('disconnect', () => {
         console.log(`Disconnect: ${socket.id}`);
+
+        room.removeClient(socket);
+        if (room.isEmpty()) {
+            RoomService.removeRoom(room);
+        }
     });
 
 });
