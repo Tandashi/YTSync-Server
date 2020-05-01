@@ -1,40 +1,35 @@
-import WebSocket from 'ws';
+import http from 'http';
+import socketIO from 'socket.io';
 
-const wss = new WebSocket.Server({
-    port: 8080,
-    perMessageDeflate: {
-    zlibDeflateOptions: {
-        // See zlib defaults.
-        chunkSize: 1024,
-        memLevel: 7,
-        level: 3
-    },
-    zlibInflateOptions: {
-        chunkSize: 10 * 1024
-    },
-    // Other options settable:
-    clientNoContextTakeover: true, // Defaults to negotiated value.
-    serverNoContextTakeover: true, // Defaults to negotiated value.
-    serverMaxWindowBits: 10, // Defaults to negotiated value.
-    // Below options specified as default values.
-    concurrencyLimit: 10, // Limits zlib concurrency for perf.
-    threshold: 1024 // Size (in bytes) below which messages
-    // should not be compressed.
-    }
+const port = process.env.port || 8080;
+
+const server = http.createServer();
+
+const io = socketIO(server, {
+  path: '/socket.io',
+  serveClient: false,
+  // below are engine.IO options
+  pingInterval: 10000,
+  pingTimeout: 5000,
+  cookie: false
 });
 
-function broadcast(data: string, sender: WebSocket) {
-    wss.clients.forEach((client) => {
-        if (client !== sender) {
-            client.send(data);
-        }
-    });
-}
+io.of(/.*/).on('connection', (socket: SocketIO.Socket) => {
 
-wss.on('connection', (ws) => {
-    console.log("Connection");
-    ws.on('message', (message) => {
-        console.log(`received: ${message.toString()}`);
-        broadcast(message.toString(), ws);
+    console.log(`Connection: ${socket.id}`);
+
+    socket.on('message', (data) => {
+        socket.nsp.emit('message', data);
     });
+
+    socket.on('disconnect', () => {
+        console.log(`Disconnect: ${socket.id}`);
+    });
+
+    socket.emit('message', 'pause');
+
+});
+
+server.listen(port, () => {
+    console.log(`Server running on port: ${port}`);
 });
