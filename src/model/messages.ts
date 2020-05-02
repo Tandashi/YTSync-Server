@@ -1,3 +1,5 @@
+import logger from '../logger';
+
 export enum Message {
     PLAY = "play",
     PAUSE = "pause",
@@ -25,7 +27,7 @@ export function sendMessageToSocket(socket: SocketIO.Socket, type: Message, data
         action: type,
         data
     };
-    console.log(`Sending Message: ${JSON.stringify(message)}`);
+    logger.info(`Sending Message (${JSON.stringify(message)}) to Socket -> socketId: ${socket.id}`);
     socket.emit('message', JSON.stringify(message));
 }
 

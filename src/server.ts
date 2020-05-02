@@ -2,6 +2,7 @@ import http from 'http';
 import socketIO from 'socket.io';
 import RoomService from './service/room-service';
 import { VideoState, Message } from './model/messages';
+import logger from './logger';
 
 const port = process.env.port || 8080;
 
@@ -17,14 +18,14 @@ const io = socketIO(server, {
 });
 
 io.of(/.*/).on('connection', (socket: SocketIO.Socket) => {
-    console.log(`Connection: ${socket.id}`);
+    logger.info(`Connection: ${socket.id}`);
 
     const room = RoomService.getRoom(socket);
 
     socket.on('message', (data: string) => {
-        // Check if socket is host. If not we ignore the send command.
-        if(room.isHost(socket)) {
-            try {
+        try {
+            // Check if socket is host. If not we ignore the send command.
+            if(room.isHost(socket)) {
                 const json = JSON.parse(data);
                 const command = json.action;
                 const cmdData = json.data;
@@ -51,19 +52,19 @@ io.of(/.*/).on('connection', (socket: SocketIO.Socket) => {
                         return;
                 }
             }
-            catch(e) {
-                console.error(e);
-                return;
+            else {
+                // Socket wasnt a host so we need to resync him
+                room.syncClientToRoom(socket, false);
             }
         }
-        else {
-            // Socket wasnt a host so we need to resync him
-            room.syncClientToRoom(socket, false);
+        catch(e) {
+            logger.error(e);
+            return;
         }
     });
 
     socket.on('disconnect', () => {
-        console.log(`Disconnect: ${socket.id}`);
+        logger.info(`Disconnect: ${socket.id}`);
 
         // Remove socket from room
         room.removeClient(socket);
@@ -77,5 +78,5 @@ io.of(/.*/).on('connection', (socket: SocketIO.Socket) => {
 });
 
 server.listen(port, () => {
-    console.log(`Server running on port: ${port}`);
+    logger.info(`Server running on port: ${port}`);
 });

@@ -1,5 +1,6 @@
 import { Room } from "../model/room";
 import { Role } from "../model/roles";
+import logger from '../logger';
 
 export default class RoomService {
     private static rooms: Room[] = [];
@@ -10,7 +11,7 @@ export default class RoomService {
      * @param room The room that should be removed
      */
     public static removeRoom(room: Room): void {
-        console.log(`Removing room: ${room.nsp.name}`);
+        logger.info(`Removing room: ${room.nsp.name}`);
         this.rooms = this.rooms.filter((r) => r.nsp.name !== room.nsp.name);
     }
 
