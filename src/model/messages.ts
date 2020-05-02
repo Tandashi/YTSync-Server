@@ -20,7 +20,7 @@ export function sendMessageToSocket(socket: SocketIO.Socket, type: Message, data
         action: type,
         data
     };
-    console.log(`Sending Message: ${message}`);
+    console.log(`Sending Message: ${JSON.stringify(message)}`);
     socket.emit('message', JSON.stringify(message));
 }
 

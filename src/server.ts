@@ -24,7 +24,9 @@ io.of(/.*/).on('connection', (socket: SocketIO.Socket) => {
     socket.on('message', (data) => {
         if(room.isHost(socket)) {
             try {
-                const [command, cmdData] = data.split(" ");
+                const json = JSON.parse(data);
+                const command = json.action;
+                const cmdData = json.data;
 
                 switch(command) {
                     case Message.PLAY:
@@ -36,10 +38,10 @@ io.of(/.*/).on('connection', (socket: SocketIO.Socket) => {
                         room.updateVideoState(VideoState.PAUSED);
                         break;
                     case Message.PLAY_VIDEO:
-                        room.setCurrentVideo(cmdData, true);
+                        room.setCurrentVideo(cmdData);
                         break;
                     case Message.ADD_TO_QUEUE:
-                        room.addVideoToQueue(cmdData);
+                        room.addVideoToQueue(cmdData.videoId, cmdData.title, cmdData.byline);
                         break;
                     case Message.DELETE_FROM_QUEUE:
                         room.removeVideoFromQueue(cmdData);

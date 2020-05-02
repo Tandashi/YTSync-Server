@@ -3,12 +3,13 @@ import moment from 'moment';
 import { Role } from "./roles";
 import Client from "./client";
 import { sendMessageToSocket, VideoState, Message, getMessageFromVideoState } from "./messages";
+import QueueEntry from './queue-entry';
 
 export class Room {
     private clients: Client[] = [];
 
-    private videoQueue: string[] = [];
-    private currentVideoQueueIndex: number = -1;
+    private videoQueue: QueueEntry[] = [];
+    private currentVideo: QueueEntry = null;
     private state: VideoState = VideoState.PAUSED;
     private lastTimeUpdate: number = 0;
     private lastTime: number = 0;
@@ -82,30 +83,18 @@ export class Room {
         return this.lastTime + ((currentTime - this.lastTimeUpdate) / 1000);
     }
 
-    public setCurrentVideo(videoId: string, addIfNotExists: boolean = true) {
-        let index = this.videoQueue.indexOf(videoId);
+    public setCurrentVideo(videoId: string) {
+        const entries = this.videoQueue.filter((e) => e.videoId === videoId);
 
-        if(index === -1 && !addIfNotExists)
+        if (entries.length === 0)
             return;
 
-        if(index === -1 && addIfNotExists) {
-            this.addVideoToQueue(videoId);
-            index = this.videoQueue.length - 1;
-        }
-
-        this.currentVideoQueueIndex = index;
-        console.log(`Current Video: ${this.videoQueue[this.currentVideoQueueIndex]}`);
+        this.currentVideo = entries[0];
     }
 
-    public updateVideoQueueIndex(index: number) {
-        if (this.videoQueue.length - 1 > index)
-            return;
-
-        this.currentVideoQueueIndex = index;
-    }
-
-    public addVideoToQueue(videoId: string) {
-        this.videoQueue.push(videoId);
+    public addVideoToQueue(videoId: string, title: string, byline: string) {
+        console.log(`Adding to queue video id ${videoId}`);
+        this.videoQueue.push(new QueueEntry(videoId, title, byline));
         this.sendQueue();
     }
 
@@ -113,21 +102,22 @@ export class Room {
         if (this.videoQueue.length === 1)
             return;
 
-        this.videoQueue = this.videoQueue.filter((v) => v !== videoId);
+        this.videoQueue = this.videoQueue.filter((e) => e.videoId !== videoId);
         this.sendQueue();
     }
 
     private sendQueue(except: SocketIO.Socket[] = []): void {
-        this.sendToAll(Message.QUEUE, this.videoQueue.join(","), except);
+        this.sendToAll(Message.QUEUE, this.videoQueue, except);
     }
 
     public syncClienToRoom(socket: SocketIO.Socket): void {
-        sendMessageToSocket(socket, Message.QUEUE, this.videoQueue.join(","));
-        sendMessageToSocket(socket, Message.PLAY_VIDEO, this.videoQueue[this.currentVideoQueueIndex]);
+        sendMessageToSocket(socket, Message.QUEUE, this.videoQueue);
+        if (this.currentVideo !== null) {
+            sendMessageToSocket(socket, Message.PLAY_VIDEO, this.currentVideo.videoId);
+        }
 
         const message = getMessageFromVideoState(this.state);
         const videoTime = this.getVideoTime().toString();
-        console.log(`Syncing Client to: ${message} | ${videoTime}`);
         sendMessageToSocket(socket, message, videoTime);
     }
 }
