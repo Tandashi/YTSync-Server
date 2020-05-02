@@ -90,6 +90,7 @@ export class Room {
             return;
 
         this.currentVideo = entries[0];
+        this.sendQueue();
     }
 
     public addVideoToQueue(videoId: string, title: string, byline: string) {
@@ -111,12 +112,12 @@ export class Room {
     }
 
     private sendQueue(except: SocketIO.Socket[] = []): void {
-        this.sendToAll(Message.QUEUE, this.videoQueue, except);
+        this.sendToAll(Message.QUEUE, { videos: this.videoQueue, video: this.currentVideo }, except);
     }
 
     public syncClienToRoom(socket: SocketIO.Socket): void {
-        sendMessageToSocket(socket, Message.QUEUE, this.videoQueue);
         if (this.currentVideo !== null) {
+            sendMessageToSocket(socket, Message.QUEUE, { videos: this.videoQueue, video: this.currentVideo });
             sendMessageToSocket(socket, Message.PLAY_VIDEO, this.currentVideo.videoId);
         }
 
