@@ -15,10 +15,13 @@ export enum VideoState {
     PAUSED = "pause"
 }
 
-export function sendMessageToSocket(socket: SocketIO.Socket, type: Message, data: string): void {
-    const message = `${type} ${data}`;
+export function sendMessageToSocket(socket: SocketIO.Socket, type: Message, data: any): void {
+    const message = {
+        action: type,
+        data
+    };
     console.log(`Sending Message: ${message}`);
-    socket.emit('message', message);
+    socket.emit('message', JSON.stringify(message));
 }
 
 export function getMessageFromVideoState(state: VideoState): Message | undefined {

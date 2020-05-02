@@ -46,7 +46,7 @@ export class Room {
         this.clients = this.clients.filter((c) => c.socket.id !== socket.id);
     }
 
-    public sendToAll(type: Message, data: string, except: SocketIO.Socket[]) {
+    public sendToAll(type: Message, data: any, except: SocketIO.Socket[]) {
         this.clients.forEach((c) => {
             if(!except.includes(c.socket)) {
                 sendMessageToSocket(c.socket, type, data);
