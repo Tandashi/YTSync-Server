@@ -94,6 +94,10 @@ export class Room {
 
     public addVideoToQueue(videoId: string, title: string, byline: string) {
         console.log(`Adding to queue video id ${videoId}`);
+        const entries = this.videoQueue.filter((e) => e.videoId === videoId);
+        if (entries.length !== 0)
+            return;
+
         this.videoQueue.push(new QueueEntry(videoId, title, byline));
         this.sendQueue();
     }
