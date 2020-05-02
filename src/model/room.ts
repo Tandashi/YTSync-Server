@@ -119,11 +119,18 @@ export class Room {
     /**
      * Update the rooms video state.
      *
+     * Will send a VideoState Message to all clients except the one that updated.
+     *
      * @param state The new room VideoState
+     * @param socket The socket that wants to update the video state
      */
-    public updateVideoState(state: Message.VideoState): void {
+    public updateVideoState(state: Message.VideoState, socket: SocketIO.Socket): void {
         console.log(`Updating VideoState: ${state}`);
         this.state = state;
+
+        const message = Message.getMessageFromVideoState(this.state);
+        const videoTime = this.getVideoTime().toString();
+        this.sendToAll(message, videoTime, [socket]);
     }
 
     /**
@@ -152,14 +159,15 @@ export class Room {
 
     /**
      * Set the current video of the room.
-     * Will send a QUEUE update message.
+     *
+     * Will send a PLAY_VIDEO Message to all clients in the room.
      *
      * **Caution:** The videoId has to be already in the room queue.
      *
      * @see addVideoToQueue
-     * @see sendQueue
      *
      * @param videoId The new room videoId
+     * @param socket The socket that want to update the current video
      */
     public setCurrentVideo(videoId: string): void {
         const entries = this.videoQueue.filter((e) => e.videoId === videoId);
@@ -168,7 +176,7 @@ export class Room {
             return;
 
         this.currentVideo = entries[0];
-        this.sendQueue();
+        this.sendToAll(Message.Message.PLAY_VIDEO, this.currentVideo.videoId);
     }
 
     /**
@@ -199,7 +207,7 @@ export class Room {
      * Will send a QUEUE update message.
      *
      * If the current playing video is removed the first video in the queue will be played.
-     * In this case a PLAY_VIDEO Message will be sent.
+     * In this case a PLAY_VIDEO Message will be send.
      *
      * **Caution:** Will not remove the video if it's the only one left in the queue.
      *
@@ -220,7 +228,6 @@ export class Room {
         // If so we change the current playing video the the first in the queue.
         if (this.currentVideo.videoId === videoId) {
             this.setCurrentVideo(this.videoQueue[0].videoId);
-            this.sendToAll(Message.Message.PLAY_VIDEO, this.currentVideo.videoId);
         }
     }
 
@@ -237,10 +244,14 @@ export class Room {
      * Sync the given socket to the room.
      *
      * @param socket The socket that should be synced.
+     * @param sendQueue If the queue should be send or not.
      */
-    public syncClienToRoom(socket: SocketIO.Socket): void {
+    public syncClientToRoom(socket: SocketIO.Socket, sendQueue: boolean): void {
         if (this.currentVideo !== null) {
-            Message.sendMessageToSocket(socket, Message.Message.QUEUE, { videos: this.videoQueue, video: this.currentVideo });
+            if (sendQueue) {
+                Message.sendMessageToSocket(socket, Message.Message.QUEUE, { videos: this.videoQueue, video: this.currentVideo });
+            }
+
             Message.sendMessageToSocket(socket, Message.Message.PLAY_VIDEO, this.currentVideo.videoId);
         }
 

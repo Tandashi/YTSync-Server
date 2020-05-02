@@ -32,11 +32,11 @@ io.of(/.*/).on('connection', (socket: SocketIO.Socket) => {
                 switch(command) {
                     case Message.PLAY:
                         room.updateVideoTime(parseFloat(cmdData));
-                        room.updateVideoState(VideoState.PLAYING);
+                        room.updateVideoState(VideoState.PLAYING, socket);
                         break;
                     case Message.PAUSE:
                         room.updateVideoTime(parseFloat(cmdData));
-                        room.updateVideoState(VideoState.PAUSED);
+                        room.updateVideoState(VideoState.PAUSED, socket);
                         break;
                     case Message.PLAY_VIDEO:
                         room.setCurrentVideo(cmdData);
@@ -50,8 +50,6 @@ io.of(/.*/).on('connection', (socket: SocketIO.Socket) => {
                     default:
                         return;
                 }
-
-                room.sendToAll(command, cmdData, [socket]);
             }
             catch(e) {
                 console.error(e);
@@ -60,7 +58,7 @@ io.of(/.*/).on('connection', (socket: SocketIO.Socket) => {
         }
         else {
             // Socket wasnt a host so we need to resync him
-            room.syncClienToRoom(socket);
+            room.syncClientToRoom(socket, false);
         }
     });
 
