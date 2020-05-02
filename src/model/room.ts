@@ -47,7 +47,7 @@ export class Room {
         this.clients = this.clients.filter((c) => c.socket.id !== socket.id);
     }
 
-    public sendToAll(type: Message, data: any, except: SocketIO.Socket[]) {
+    public sendToAll(type: Message, data: any, except: SocketIO.Socket[] = []) {
         this.clients.forEach((c) => {
             if(!except.includes(c.socket)) {
                 sendMessageToSocket(c.socket, type, data);
@@ -109,6 +109,11 @@ export class Room {
 
         this.videoQueue = this.videoQueue.filter((e) => e.videoId !== videoId);
         this.sendQueue();
+
+        if (this.currentVideo.videoId === videoId) {
+            this.setCurrentVideo(this.videoQueue[0].videoId);
+            this.sendToAll(Message.PLAY_VIDEO, this.currentVideo.videoId);
+        }
     }
 
     private sendQueue(except: SocketIO.Socket[] = []): void {
