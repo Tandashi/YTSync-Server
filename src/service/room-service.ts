@@ -4,13 +4,19 @@ import { Role } from "../model/roles";
 export default class RoomService {
     private static rooms: Room[] = [];
 
-    public static removeRoom(room: Room) {
+    /**
+     * Remove a room
+     *
+     * @param room The room that should be removed
+     */
+    public static removeRoom(room: Room): void {
         console.log(`Removing room: ${room.nsp.name}`);
         this.rooms = this.rooms.filter((r) => r.nsp.name !== room.nsp.name);
     }
 
     /**
-     * Get the Room for the given SocketIO.Socket
+     * Get the Room for the given SocketIO.Socket.
+     * If not in a room a new one will be created.
      *
      * @param socket The socket to get the Room of
      *

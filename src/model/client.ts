@@ -1,5 +1,12 @@
 import { Role } from "./roles";
 
 export default class Client {
-    constructor(public socket: SocketIO.Socket, public role: Role) { }
+    /**
+     * @param socket The socket of the client
+     * @param role The role of the client
+     */
+    constructor(
+        public socket: SocketIO.Socket,
+        public role: Role
+    ) { }
 }

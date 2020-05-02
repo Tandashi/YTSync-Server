@@ -21,7 +21,8 @@ io.of(/.*/).on('connection', (socket: SocketIO.Socket) => {
 
     const room = RoomService.getRoom(socket);
 
-    socket.on('message', (data) => {
+    socket.on('message', (data: string) => {
+        // Check if socket is host. If not we ignore the send command.
         if(room.isHost(socket)) {
             try {
                 const json = JSON.parse(data);
@@ -58,6 +59,7 @@ io.of(/.*/).on('connection', (socket: SocketIO.Socket) => {
             }
         }
         else {
+            // Socket wasnt a host so we need to resync him
             room.syncClienToRoom(socket);
         }
     });
@@ -65,8 +67,11 @@ io.of(/.*/).on('connection', (socket: SocketIO.Socket) => {
     socket.on('disconnect', () => {
         console.log(`Disconnect: ${socket.id}`);
 
+        // Remove socket from room
         room.removeClient(socket);
+        // Check if we removed last client
         if (room.isEmpty()) {
+            // Remove empty room
             RoomService.removeRoom(room);
         }
     });

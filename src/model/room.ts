@@ -1,43 +1,81 @@
 import moment from 'moment';
 
 import { Role } from "./roles";
+import * as Message from "./messages";
 import Client from "./client";
-import { sendMessageToSocket, VideoState, Message, getMessageFromVideoState } from "./messages";
 import QueueEntry from './queue-entry';
 
 export class Room {
     private clients: Client[] = [];
 
+    // Contains the videos in the queue
     private videoQueue: QueueEntry[] = [];
+    // Contains the current video
     private currentVideo: QueueEntry = null;
-    private state: VideoState = VideoState.PAUSED;
+    // The current Video state of the room
+    private state: Message.VideoState = Message.VideoState.PAUSED;
+    // The last time the time was syned in millis
     private lastTimeUpdate: number = 0;
-    private lastTime: number = 0;
+    // The video time that was syned
+    private videoTime: number = 0;
 
+    /**
+     * @param nsp The namespace the room should manage
+     */
     constructor(public nsp: SocketIO.Namespace) { }
 
-    private socketInRoom(socket: SocketIO.Socket) {
+    /**
+     * Check if the given socket is in this room.
+     *
+     * @param socket The socket to check for
+     */
+    private socketInRoom(socket: SocketIO.Socket): boolean {
         return this.clients.map((e) => e.socket.id).includes(socket.id);
     }
 
+    /**
+     * Get the client for the given socket.
+     *
+     * @param socket The socket to get the client of
+     *
+     * @returns The Client or null if socket not in room
+     */
     public getClient(socket: SocketIO.Socket): Client | null {
         const clients = this.clients.filter((c) => c.socket.id === socket.id);
         return clients.length > 0 ? clients[0] : null;
     }
 
-    public addClient(socket: SocketIO.Socket, role: Role): void {
-        const client = new Client(socket, role);
+    /**
+     * Add a client to the room with given role.
+     *
+     * @param socket The socket to add
+     * @param role The role of the socket (Default: Role.MEMBER)
+     */
+    public addClient(socket: SocketIO.Socket, role: Role = Role.MEMBER): void {
+        // Check if socket is already in this room
         if (!this.socketInRoom(socket)) {
+            // Create a new client and add to the list
+            const client = new Client(socket, role);
             this.clients.push(client);
         }
     }
 
+    /**
+     * Remove the client from the room.
+     * If the client was the HOST a new client
+     * will be promoted to HOST if there are other people left.
+     *
+     * @param socket The socket of the client to remove
+     */
     public removeClient(socket: SocketIO.Socket): void {
         // Set new host if we remove host and people are left
         if(this.isHost(socket) && this.clients.length > 1) {
+            // Go through all clients
             for(const client of this.clients) {
+                // Check if client is not the one to remove
                 if(client.socket.id !== socket.id) {
                     console.log(`Client is new host: ${client.socket.id}`);
+                    // Change his role to HOST
                     client.role = Role.HOST;
                     break;
                 }
@@ -47,43 +85,83 @@ export class Room {
         this.clients = this.clients.filter((c) => c.socket.id !== socket.id);
     }
 
-    public sendToAll(type: Message, data: any, except: SocketIO.Socket[] = []) {
+    /**
+     * Send a message to all clients in this room except a given list.
+     *
+     * @param type The message type to send
+     * @param data The data of the message
+     * @param except A list of sockets that should not receive the message
+     */
+    public sendToAll(type: Message.Message, data: any, except: SocketIO.Socket[] = []): void {
         this.clients.forEach((c) => {
             if(!except.includes(c.socket)) {
-                sendMessageToSocket(c.socket, type, data);
+                Message.sendMessageToSocket(c.socket, type, data);
             }
         });
     }
 
+    /**
+     * Returns if the room is empty or not.
+     */
     public isEmpty(): boolean {
         return this.clients.length === 0;
     }
 
+    /**
+     * Check if the given socket is a HOST.
+     *
+     * @param socket The socket to check
+     */
     public isHost(socket: SocketIO.Socket): boolean {
         return this.getClient(socket).role === Role.HOST;
     }
 
-    public updateVideoState(state: VideoState) {
+    /**
+     * Update the rooms video state.
+     *
+     * @param state The new room VideoState
+     */
+    public updateVideoState(state: Message.VideoState): void {
         console.log(`Updating VideoState: ${state}`);
         this.state = state;
     }
 
-    public updateVideoTime(time: number) {
+    /**
+     * Update the rooms video time.
+     *
+     * @param time The new room video time
+     */
+    public updateVideoTime(time: number): void {
         console.log(`Updating VideoTime: ${time}`);
-        this.lastTime = time;
+        this.videoTime = time;
         this.lastTimeUpdate = moment.now();
         console.log(`Updating LastTimeUpdate: ${this.lastTimeUpdate}`);
     }
 
+    /**
+     * Get the current video time of the room.
+     * Will be calculated based on time passed and last videoTime sync.
+     */
     public getVideoTime(): number {
-        if (this.state === VideoState.PAUSED)
-            return this.lastTime;
+        if (this.state === Message.VideoState.PAUSED)
+            return this.videoTime;
 
         const currentTime = moment.now();
-        return this.lastTime + ((currentTime - this.lastTimeUpdate) / 1000);
+        return this.videoTime + ((currentTime - this.lastTimeUpdate) / 1000);
     }
 
-    public setCurrentVideo(videoId: string) {
+    /**
+     * Set the current video of the room.
+     * Will send a QUEUE update message.
+     *
+     * **Caution:** The videoId has to be already in the room queue.
+     *
+     * @see addVideoToQueue
+     * @see sendQueue
+     *
+     * @param videoId The new room videoId
+     */
+    public setCurrentVideo(videoId: string): void {
         const entries = this.videoQueue.filter((e) => e.videoId === videoId);
 
         if (entries.length === 0)
@@ -93,9 +171,22 @@ export class Room {
         this.sendQueue();
     }
 
-    public addVideoToQueue(videoId: string, title: string, byline: string) {
+    /**
+     * Add a video to the room queue.
+     * Will send a QUEUE update message.
+     *
+     * **Caution:** Will not add the video to the queue if it is already present.
+     *
+     * @see sendQueue
+     *
+     * @param videoId The videoId to add
+     * @param title The title of the video
+     * @param byline The byline of the video
+     */
+    public addVideoToQueue(videoId: string, title: string, byline: string): void {
         console.log(`Adding to queue video id ${videoId}`);
         const entries = this.videoQueue.filter((e) => e.videoId === videoId);
+        // Check if the video is already in the queue
         if (entries.length !== 0)
             return;
 
@@ -103,31 +194,58 @@ export class Room {
         this.sendQueue();
     }
 
-    public removeVideoFromQueue(videoId: string) {
+    /**
+     * Remove a video from the room queue.
+     * Will send a QUEUE update message.
+     *
+     * If the current playing video is removed the first video in the queue will be played.
+     * In this case a PLAY_VIDEO Message will be sent.
+     *
+     * **Caution:** Will not remove the video if it's the only one left in the queue.
+     *
+     * @see sendQueue
+     *
+     * @param videoId The videoId to remove from the queue
+     */
+    public removeVideoFromQueue(videoId: string): void {
+        // Check if there is only one video in the case.
+        // In this case we dont want to remove it.
         if (this.videoQueue.length === 1)
             return;
 
         this.videoQueue = this.videoQueue.filter((e) => e.videoId !== videoId);
         this.sendQueue();
 
+        // Check if the current video is the one we deleted.
+        // If so we change the current playing video the the first in the queue.
         if (this.currentVideo.videoId === videoId) {
             this.setCurrentVideo(this.videoQueue[0].videoId);
-            this.sendToAll(Message.PLAY_VIDEO, this.currentVideo.videoId);
+            this.sendToAll(Message.Message.PLAY_VIDEO, this.currentVideo.videoId);
         }
     }
 
+    /**
+     * Send the current video queue to all the room clients.
+     *
+     * @param except The sockets that should be excluded
+     */
     private sendQueue(except: SocketIO.Socket[] = []): void {
-        this.sendToAll(Message.QUEUE, { videos: this.videoQueue, video: this.currentVideo }, except);
+        this.sendToAll(Message.Message.QUEUE, { videos: this.videoQueue, video: this.currentVideo }, except);
     }
 
+    /**
+     * Sync the given socket to the room.
+     *
+     * @param socket The socket that should be synced.
+     */
     public syncClienToRoom(socket: SocketIO.Socket): void {
         if (this.currentVideo !== null) {
-            sendMessageToSocket(socket, Message.QUEUE, { videos: this.videoQueue, video: this.currentVideo });
-            sendMessageToSocket(socket, Message.PLAY_VIDEO, this.currentVideo.videoId);
+            Message.sendMessageToSocket(socket, Message.Message.QUEUE, { videos: this.videoQueue, video: this.currentVideo });
+            Message.sendMessageToSocket(socket, Message.Message.PLAY_VIDEO, this.currentVideo.videoId);
         }
 
-        const message = getMessageFromVideoState(this.state);
+        const message = Message.getMessageFromVideoState(this.state);
         const videoTime = this.getVideoTime().toString();
-        sendMessageToSocket(socket, message, videoTime);
+        Message.sendMessageToSocket(socket, message, videoTime);
     }
 }
