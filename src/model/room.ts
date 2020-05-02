@@ -46,10 +46,10 @@ export class Room {
         this.clients = this.clients.filter((c) => c.socket.id !== socket.id);
     }
 
-    public sendToAllExcept(message: any, except: SocketIO.Socket[]) {
+    public sendToAll(type: Message, data: string, except: SocketIO.Socket[]) {
         this.clients.forEach((c) => {
             if(!except.includes(c.socket)) {
-                c.socket.emit('message', message);
+                sendMessageToSocket(c.socket, type, data);
             }
         });
     }
@@ -89,7 +89,7 @@ export class Room {
             return;
 
         if(index === -1 && addIfNotExists) {
-            this.videoQueue.push(videoId);
+            this.addVideoToQueue(videoId);
             index = this.videoQueue.length - 1;
         }
 
@@ -106,9 +106,23 @@ export class Room {
 
     public addVideoToQueue(videoId: string) {
         this.videoQueue.push(videoId);
+        this.sendQueue();
+    }
+
+    public removeVideoFromQueue(videoId: string) {
+        if (this.videoQueue.length === 1)
+            return;
+
+        this.videoQueue = this.videoQueue.filter((v) => v !== videoId);
+        this.sendQueue();
+    }
+
+    private sendQueue(except: SocketIO.Socket[] = []): void {
+        this.sendToAll(Message.QUEUE, this.videoQueue.join(","), except);
     }
 
     public syncClienToRoom(socket: SocketIO.Socket): void {
+        sendMessageToSocket(socket, Message.QUEUE, this.videoQueue.join(","));
         sendMessageToSocket(socket, Message.PLAY_VIDEO, this.videoQueue[this.currentVideoQueueIndex]);
 
         const message = getMessageFromVideoState(this.state);

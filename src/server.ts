@@ -38,14 +38,22 @@ io.of(/.*/).on('connection', (socket: SocketIO.Socket) => {
                     case Message.PLAY_VIDEO:
                         room.setCurrentVideo(cmdData, true);
                         break;
+                    case Message.ADD_TO_QUEUE:
+                        room.addVideoToQueue(cmdData);
+                        break;
+                    case Message.DELETE_FROM_QUEUE:
+                        room.removeVideoFromQueue(cmdData);
+                        break;
+                    default:
+                        return;
                 }
+
+                room.sendToAll(command, cmdData, [socket]);
             }
             catch(e) {
                 console.error(e);
                 return;
             }
-
-            room.sendToAllExcept(data, [socket]);
         }
         else {
             room.syncClienToRoom(socket);
