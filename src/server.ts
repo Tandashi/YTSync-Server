@@ -54,7 +54,7 @@ io.of(/.*/).on('connection', (socket: SocketIO.Socket) => {
             }
             else {
                 // Socket wasnt a host so we need to resync him
-                room.syncClientToRoom(socket, false);
+                room.syncClientToRoom(socket, false, false);
             }
         }
         catch(e) {

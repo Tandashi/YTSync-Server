@@ -252,15 +252,16 @@ export class Room {
      * @param socket The socket that should be synced.
      * @param sendQueue If the queue should be send or not.
      */
-    public syncClientToRoom(socket: SocketIO.Socket, sendQueue: boolean): void {
-        logger.info(`Syncing client -> socketId: '${socket.id}' | sendQueue: ${sendQueue}`);
+    public syncClientToRoom(socket: SocketIO.Socket, sendQueue: boolean, sendPlayVideo: boolean): void {
+        logger.info(`Syncing client -> socketId: '${socket.id}' | sendQueue: ${sendQueue} | sendPlayVideo: ${sendPlayVideo}`);
 
         if (this.currentVideo !== null) {
             if (sendQueue) {
                 Messages.sendMessageToSocket(socket, Messages.Message.QUEUE, { videos: this.videoQueue, video: this.currentVideo });
             }
-
-            Messages.sendMessageToSocket(socket, Messages.Message.PLAY_VIDEO, this.currentVideo.videoId);
+            if (sendPlayVideo) {
+                Messages.sendMessageToSocket(socket, Messages.Message.PLAY_VIDEO, this.currentVideo.videoId);
+            }
         }
 
         const message = Messages.getMessageFromVideoState(this.state);
