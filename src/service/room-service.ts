@@ -1,5 +1,5 @@
 import { Room } from "../model/room";
-import { Role } from "../model/roles";
+import { Role } from "../model/role";
 import logger from '../logger';
 
 export default class RoomService {

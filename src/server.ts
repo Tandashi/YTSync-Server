@@ -1,7 +1,7 @@
 import http from 'http';
 import socketIO from 'socket.io';
 import RoomService from './service/room-service';
-import { VideoState, Message } from './model/messages';
+import { VideoState, Message } from './model/message';
 import logger from './logger';
 
 const port = process.env.port || 8080;
@@ -45,7 +45,7 @@ io.of(/.*/).on('connection', (socket: SocketIO.Socket) => {
                     case Message.ADD_TO_QUEUE:
                         room.addVideoToQueue(cmdData.videoId, cmdData.title, cmdData.byline);
                         break;
-                    case Message.DELETE_FROM_QUEUE:
+                    case Message.REMOVE_FROM_QUEUE:
                         room.removeVideoFromQueue(cmdData);
                         break;
                     default:

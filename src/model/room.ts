@@ -1,11 +1,11 @@
 import moment from 'moment';
 
-import * as Message from "./messages";
+import * as Messages from "./message";
 import Client from "./client";
 import QueueEntry from './queue-entry';
 import logger from '../logger';
 
-import { Role } from "./roles";
+import { Role } from "./role";
 
 export class Room {
     private clients: Client[] = [];
@@ -15,7 +15,7 @@ export class Room {
     // Contains the current video
     private currentVideo: QueueEntry = null;
     // The current Video state of the room
-    private state: Message.VideoState = Message.VideoState.PAUSED;
+    private state: Messages.VideoState = Messages.VideoState.PAUSED;
     // The last time the time was syned in millis
     private lastTimeUpdate: number = 0;
     // The video time that was syned
@@ -96,10 +96,10 @@ export class Room {
      * @param data The data of the message
      * @param except A list of sockets that should not receive the message
      */
-    public sendToAll(type: Message.Message, data: any, except: SocketIO.Socket[] = []): void {
+    public sendToAll(type: Messages.Message, data: any, except: SocketIO.Socket[] = []): void {
         this.clients.forEach((c) => {
             if(!except.includes(c.socket)) {
-                Message.sendMessageToSocket(c.socket, type, data);
+                Messages.sendMessageToSocket(c.socket, type, data);
             }
         });
     }
@@ -128,11 +128,11 @@ export class Room {
      * @param state The new room VideoState
      * @param socket The socket that wants to update the video state
      */
-    public updateVideoState(state: Message.VideoState, socket: SocketIO.Socket): void {
+    public updateVideoState(state: Messages.VideoState, socket: SocketIO.Socket): void {
         logger.info(`Updating room (${this.nsp.name}) VideoState -> '${this.state}' => '${state}'`);
         this.state = state;
 
-        const message = Message.getMessageFromVideoState(this.state);
+        const message = Messages.getMessageFromVideoState(this.state);
         const videoTime = this.getVideoTime().toString();
         this.sendToAll(message, videoTime, [socket]);
     }
@@ -154,7 +154,7 @@ export class Room {
      * Will be calculated based on time passed and last videoTime sync.
      */
     public getVideoTime(): number {
-        if (this.state === Message.VideoState.PAUSED)
+        if (this.state === Messages.VideoState.PAUSED)
             return this.videoTime;
 
         const currentTime = moment.now();
@@ -181,7 +181,7 @@ export class Room {
 
         this.currentVideo = entries[0];
         logger.info(`Setting current video for room (${this.nsp.name}) -> videoId: '${videoId}'`);
-        this.sendToAll(Message.Message.PLAY_VIDEO, this.currentVideo.videoId);
+        this.sendToAll(Messages.Message.PLAY_VIDEO, this.currentVideo.videoId);
     }
 
     /**
@@ -202,9 +202,10 @@ export class Room {
         if (entries.length !== 0)
             return;
 
-        this.videoQueue.push(new QueueEntry(videoId, title, byline));
+        const entry = new QueueEntry(videoId, title, byline);
+        this.videoQueue.push(entry);
         logger.info(`Added video to room (${this.nsp.name}) queue -> videoID: '${videoId}' | title: '${title}' | byline: '${byline}'`);
-        this.sendQueue();
+        this.sendToAll(Messages.Message.ADD_TO_QUEUE, entry);
     }
 
     /**
@@ -226,24 +227,23 @@ export class Room {
         if (this.videoQueue.length === 1)
             return;
 
-        this.videoQueue = this.videoQueue.filter((e) => e.videoId !== videoId);
+        const reduced = this.videoQueue.reduce((acc, e) => {
+            if (e.videoId !== videoId)
+                acc.queue.push(e);
+            else
+                acc.el = e;
+            return acc;
+        }, { queue: [], el: undefined });
+        this.videoQueue = reduced.queue;
+
         logger.info(`Removed video from room (${this.nsp.name}) queue -> videoId: '${videoId}'`);
-        this.sendQueue();
+        this.sendToAll(Messages.Message.REMOVE_FROM_QUEUE, reduced.el);
 
         // Check if the current video is the one we deleted.
         // If so we change the current playing video the the first in the queue.
         if (this.currentVideo !== null && this.currentVideo.videoId === videoId) {
             this.setCurrentVideo(this.videoQueue[0].videoId);
         }
-    }
-
-    /**
-     * Send the current video queue to all the room clients.
-     *
-     * @param except The sockets that should be excluded
-     */
-    private sendQueue(except: SocketIO.Socket[] = []): void {
-        this.sendToAll(Message.Message.QUEUE, { videos: this.videoQueue, video: this.currentVideo }, except);
     }
 
     /**
@@ -257,14 +257,14 @@ export class Room {
 
         if (this.currentVideo !== null) {
             if (sendQueue) {
-                Message.sendMessageToSocket(socket, Message.Message.QUEUE, { videos: this.videoQueue, video: this.currentVideo });
+                Messages.sendMessageToSocket(socket, Messages.Message.QUEUE, { videos: this.videoQueue, video: this.currentVideo });
             }
 
-            Message.sendMessageToSocket(socket, Message.Message.PLAY_VIDEO, this.currentVideo.videoId);
+            Messages.sendMessageToSocket(socket, Messages.Message.PLAY_VIDEO, this.currentVideo.videoId);
         }
 
-        const message = Message.getMessageFromVideoState(this.state);
+        const message = Messages.getMessageFromVideoState(this.state);
         const videoTime = this.getVideoTime().toString();
-        Message.sendMessageToSocket(socket, message, videoTime);
+        Messages.sendMessageToSocket(socket, message, videoTime);
     }
 }

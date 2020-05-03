@@ -1,4 +1,4 @@
-import { Role } from "./roles";
+import { Role } from "./role";
 
 export default class Client {
     /**
