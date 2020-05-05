@@ -1,12 +1,16 @@
+import express from 'express';
 import http from 'http';
 import socketIO from 'socket.io';
+import path from 'path';
+
 import RoomService from './service/room-service';
 import { VideoState, Message } from './model/message';
 import logger from './logger';
 
 const port = process.env.port || 8080;
 
-const server = http.createServer();
+const app = express();
+const server = http.createServer(app);
 
 const io = socketIO(server, {
   path: '/socket.io',
@@ -16,6 +20,8 @@ const io = socketIO(server, {
   pingTimeout: 5000,
   cookie: false
 });
+
+app.use(express.static(path.join(__dirname, '..', 'public')));
 
 io.of(/.*/).on('connection', (socket: SocketIO.Socket) => {
     logger.info(`Connection: ${socket.id}`);
