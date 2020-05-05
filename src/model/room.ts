@@ -77,8 +77,9 @@ export class Room {
      * @param socket The socket of the client to remove
      */
     public removeClient(socket: SocketIO.Socket): void {
+        const isHost = this.isHost(socket);
         // Set new host if we remove host and people are left
-        if(this.isHost(socket) && this.clients.length > 1) {
+        if(isHost && this.clients.length > 1) {
             // Go through all clients
             for(const client of this.clients) {
                 // Check if client is not the one to remove
@@ -93,7 +94,10 @@ export class Room {
 
         this.clients = this.clients.filter((c) => c.socket.id !== socket.id);
         logger.info(`Removed client with -> socketId: '${socket.id}'`);
-        this.sendToAll(Messages.Message.CLIENT_DISCONNECT, socket.id);
+        if (isHost)
+            this.sendToAll(Messages.Message.CLIENTS, this.clients.map(c => c.getAsObject()));
+        else
+            this.sendToAll(Messages.Message.CLIENT_DISCONNECT, socket.id);
     }
 
     /**
