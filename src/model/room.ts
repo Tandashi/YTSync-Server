@@ -6,6 +6,7 @@ import QueueEntry from './queue-entry';
 import logger from '../logger';
 
 import { Role } from './role';
+import NameSerivce from '../service/name-service';
 
 export class Room {
     private clients: Client[] = [];
@@ -61,7 +62,7 @@ export class Room {
             return;
 
         // Create a new client and add to the list
-        const client = new Client(socket, socket.id, role);
+        const client = new Client(socket, NameSerivce.getName(), role);
         this.clients.push(client);
         logger.info(`Added client -> socketId: '${socket.id}' | Role: ${role}`);
 
