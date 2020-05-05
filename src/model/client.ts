@@ -7,6 +7,15 @@ export default class Client {
      */
     constructor(
         public socket: SocketIO.Socket,
+        public name: string,
         public role: Role
     ) { }
+
+    public getAsObject() {
+        return {
+            socketId: this.socket.id,
+            name: this.name,
+            role: this.role
+        };
+    }
 }

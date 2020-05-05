@@ -8,7 +8,10 @@ export enum Message {
     PLAY_VIDEO = 'play-video',
     ADD_TO_QUEUE = 'add-to-queue',
     REMOVE_FROM_QUEUE = 'remove-from-queue',
-    QUEUE = 'queue'
+    QUEUE = 'queue',
+    CLIENTS = 'clients',
+    CLIENT_CONNECT = 'client-connect',
+    CLIENT_DISCONNECT = 'client-disconnect'
 }
 
 export enum VideoState {

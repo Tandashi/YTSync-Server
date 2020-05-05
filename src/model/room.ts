@@ -57,12 +57,15 @@ export class Room {
      */
     public addClient(socket: SocketIO.Socket, role: Role = Role.MEMBER): void {
         // Check if socket is already in this room
-        if (!this.socketInRoom(socket)) {
-            // Create a new client and add to the list
-            const client = new Client(socket, role);
-            this.clients.push(client);
-            logger.info(`Added client -> socketId: '${socket.id}' | Role: ${role}`);
-        }
+        if (this.socketInRoom(socket))
+            return;
+
+        // Create a new client and add to the list
+        const client = new Client(socket, socket.id, role);
+        this.clients.push(client);
+        logger.info(`Added client -> socketId: '${socket.id}' | Role: ${role}`);
+
+        this.sendToAll(Messages.Message.CLIENT_CONNECT, client.getAsObject());
     }
 
     /**
@@ -89,6 +92,7 @@ export class Room {
 
         this.clients = this.clients.filter((c) => c.socket.id !== socket.id);
         logger.info(`Removed client with -> socketId: '${socket.id}'`);
+        this.sendToAll(Messages.Message.CLIENT_DISCONNECT, socket.id);
     }
 
     /**
@@ -281,5 +285,6 @@ export class Room {
         const videoTime = this.getVideoTime().toString();
         Messages.sendMessageToSocket(socket, message, videoTime);
         Messages.sendMessageToSocket(socket, Messages.Message.AUTOPLAY, this.autoplay);
+        Messages.sendMessageToSocket(socket, Messages.Message.CLIENTS, this.clients.map(c => c.getAsObject()));
     }
 }
