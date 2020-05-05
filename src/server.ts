@@ -6,6 +6,7 @@ import path from 'path';
 import RoomService from './service/room-service';
 import { VideoState, Message } from './model/message';
 import logger from './logger';
+import { Role } from './model/role';
 
 const port = process.env.port || 8080;
 
@@ -30,12 +31,15 @@ io.of(/.*/).on('connection', (socket: SocketIO.Socket) => {
 
     socket.on('message', (data: string) => {
         try {
-            // Check if socket is host. If not we ignore the send command.
-            if(room.isHost(socket)) {
-                const json = JSON.parse(data);
-                const command = json.action;
-                const cmdData = json.data;
+            const json = JSON.parse(data);
+            const command = json.action;
+            const cmdData = json.data;
 
+            const isHost = room.isHost(socket);
+            const isPromoted = room.isPromoted(socket);
+
+            // Check if socket is host. If not we ignore the send command.
+            if(isHost) {
                 switch(command) {
                     case Message.PLAY:
                         room.updateVideoTime(parseFloat(cmdData));
@@ -45,6 +49,17 @@ io.of(/.*/).on('connection', (socket: SocketIO.Socket) => {
                         room.updateVideoTime(parseFloat(cmdData));
                         room.updateVideoState(VideoState.PAUSED, socket);
                         break;
+                    case Message.PROMOTE:
+                        room.changeRoleByClient(room.getClientBySocketId(cmdData), Role.PROMOTED);
+                        break;
+                    case Message.UNPROMOTE:
+                        room.changeRoleByClient(room.getClientBySocketId(cmdData), Role.MEMBER);
+                        break;
+                }
+            }
+
+            if (isHost || isPromoted) {
+                switch(command) {
                     case Message.AUTOPLAY:
                         room.setAutoplay(cmdData);
                         break;
@@ -59,7 +74,8 @@ io.of(/.*/).on('connection', (socket: SocketIO.Socket) => {
                         break;
                 }
             }
-            else {
+
+            if(!isHost) {
                 // Socket wasnt a host so we need to resync him
                 room.syncClientToRoom(socket, false, false);
             }

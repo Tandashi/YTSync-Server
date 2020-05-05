@@ -38,6 +38,11 @@ export class Room {
         return this.clients.map((e) => e.socket.id).includes(socket.id);
     }
 
+    public getClientBySocketId(id: string): Client | null {
+        const clients = this.clients.filter((c) => c.socket.id === id);
+        return clients.length > 0 ? clients[0] : null;
+    }
+
     /**
      * Get the client for the given socket.
      *
@@ -77,27 +82,29 @@ export class Room {
      * @param socket The socket of the client to remove
      */
     public removeClient(socket: SocketIO.Socket): void {
-        const isHost = this.isHost(socket);
         // Set new host if we remove host and people are left
-        if(isHost && this.clients.length > 1) {
+        if(this.isHost(socket) && this.clients.length > 1) {
             // Go through all clients
             for(const client of this.clients) {
                 // Check if client is not the one to remove
                 if(client.socket.id !== socket.id) {
                     logger.info(`New room (${this.nsp.name}) Host -> socketId: '${client.socket.id}' | Reason: Old one was removed`);
                     // Change his role to HOST
-                    client.role = Role.HOST;
-                    break;
+                    this.changeRoleByClient(client, Role.HOST);
+                    return;
                 }
             }
         }
 
         this.clients = this.clients.filter((c) => c.socket.id !== socket.id);
         logger.info(`Removed client with -> socketId: '${socket.id}'`);
-        if (isHost)
-            this.sendToAll(Messages.Message.CLIENTS, this.clients.map(c => c.getAsObject()));
-        else
-            this.sendToAll(Messages.Message.CLIENT_DISCONNECT, socket.id);
+        this.sendToAll(Messages.Message.CLIENT_DISCONNECT, socket.id);
+    }
+
+    public changeRoleByClient(client: Client, role: Role) {
+        logger.info(`Changed role of client in room (${this.nsp.name}) -> socketId: '${client.socket.id}' | role: ${role}`);
+        client.role = role;
+        this.sendToAll(Messages.Message.CLIENTS, this.clients.map(c => c.getAsObject()));
     }
 
     /**
@@ -123,12 +130,21 @@ export class Room {
     }
 
     /**
-     * Check if the given socket is a HOST.
+     * Check if the given socket is HOST.
      *
      * @param socket The socket to check
      */
     public isHost(socket: SocketIO.Socket): boolean {
         return this.getClient(socket).role === Role.HOST;
+    }
+
+    /**
+     * Check if the given socket is PROMOTED.
+     *
+     * @param socket The socket to check
+     */
+    public isPromoted(socket: SocketIO.Socket): boolean {
+        return this.getClient(socket).role === Role.PROMOTED;
     }
 
     /**
