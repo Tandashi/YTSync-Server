@@ -39,6 +39,9 @@ io.of(/.*/).on('connection', (socket: SocketIO.Socket) => {
                         room.updateVideoTime(parseFloat(cmdData));
                         room.updateVideoState(VideoState.PAUSED, socket);
                         break;
+                    case Message.AUTOPLAY:
+                        room.setAutoplay(cmdData);
+                        break;
                     case Message.PLAY_VIDEO:
                         room.setCurrentVideo(cmdData);
                         break;
@@ -48,8 +51,6 @@ io.of(/.*/).on('connection', (socket: SocketIO.Socket) => {
                     case Message.REMOVE_FROM_QUEUE:
                         room.removeVideoFromQueue(cmdData);
                         break;
-                    default:
-                        return;
                 }
             }
             else {

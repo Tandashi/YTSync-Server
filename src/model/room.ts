@@ -1,11 +1,11 @@
 import moment from 'moment';
 
-import * as Messages from "./message";
-import Client from "./client";
+import * as Messages from './message';
+import Client from './client';
 import QueueEntry from './queue-entry';
 import logger from '../logger';
 
-import { Role } from "./role";
+import { Role } from './role';
 
 export class Room {
     private clients: Client[] = [];
@@ -20,6 +20,8 @@ export class Room {
     private lastTimeUpdate: number = 0;
     // The video time that was syned
     private videoTime: number = 0;
+    // If autoplay is enabled
+    private autoplay: boolean = true;
 
     /**
      * @param nsp The namespace the room should manage
@@ -185,6 +187,17 @@ export class Room {
     }
 
     /**
+     * Set autoplay
+     *
+     * @param autoplay
+     */
+    public setAutoplay(autoplay: boolean) {
+        this.autoplay = autoplay;
+        logger.info(`Setting autoplay for room (${this.nsp.name}) -> autoplay: '${autoplay}'`);
+        this.sendToAll(Messages.Message.AUTOPLAY, this.autoplay);
+    }
+
+    /**
      * Add a video to the room queue.
      * Will send a QUEUE update message.
      *
@@ -267,5 +280,6 @@ export class Room {
         const message = Messages.getMessageFromVideoState(this.state);
         const videoTime = this.getVideoTime().toString();
         Messages.sendMessageToSocket(socket, message, videoTime);
+        Messages.sendMessageToSocket(socket, Messages.Message.AUTOPLAY, this.autoplay);
     }
 }
