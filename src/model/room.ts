@@ -38,6 +38,13 @@ export class Room {
         return this.clients.map((e) => e.socket.id).includes(socket.id);
     }
 
+    /**
+     * Get the client with the given socket id.
+     *
+     * @param id The socket id
+     *
+     * @returns The Client or null if socket not in room
+     */
     public getClientBySocketId(id: string): Client | null {
         const clients = this.clients.filter((c) => c.socket.id === id);
         return clients.length > 0 ? clients[0] : null;
@@ -57,6 +64,8 @@ export class Room {
 
     /**
      * Add a client to the room with given role.
+     *
+     * Will emit a CLIENT_CONNECT event.
      *
      * @param socket The socket to add
      * @param role The role of the socket (Default: Role.MEMBER)
@@ -78,6 +87,8 @@ export class Room {
      * Remove the client from the room.
      * If the client was the HOST a new client
      * will be promoted to HOST if there are other people left.
+     *
+     * Will emit a CLIENT_DISCONNECT event.
      *
      * @param socket The socket of the client to remove
      */
@@ -101,7 +112,15 @@ export class Room {
         this.sendToAll(Messages.Message.CLIENT_DISCONNECT, socket.id);
     }
 
-    public changeRoleByClient(client: Client, role: Role) {
+    /**
+     * Change the role of a given Client.
+     *
+     * Will emit a CLIENTS event.
+     *
+     * @param client The client who's role should be changed
+     * @param role The new role
+     */
+    public changeRoleByClient(client: Client, role: Role): void {
         logger.info(`Changed role of client in room (${this.nsp.name}) -> socketId: '${client.socket.id}' | role: ${role}`);
         client.role = role;
         this.sendToAll(Messages.Message.CLIENTS, this.clients.map(c => c.getAsObject()));
@@ -224,7 +243,7 @@ export class Room {
 
     /**
      * Add a video to the room queue.
-     * Will send a QUEUE update message.
+     * Will send a ADD_TO_QUEUE message.
      *
      * **Caution:** Will not add the video to the queue if it is already present.
      *
@@ -248,7 +267,7 @@ export class Room {
 
     /**
      * Remove a video from the room queue.
-     * Will send a QUEUE update message.
+     * Will send a REMOVE_FROM_QUEUE message.
      *
      * If the current playing video is removed the first video in the queue will be played.
      * In this case a PLAY_VIDEO Message will be send.

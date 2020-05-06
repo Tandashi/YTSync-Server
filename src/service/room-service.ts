@@ -6,7 +6,7 @@ export default class RoomService {
     private static rooms: Room[] = [];
 
     /**
-     * Remove a room
+     * Remove a room.
      *
      * @param room The room that should be removed
      */
@@ -16,12 +16,12 @@ export default class RoomService {
     }
 
     /**
-     * Get the Room for the given SocketIO.Socket.
-     * If not in a room a new one will be created.
+     * Get the room for the given socket.
+     * If the scoekt is not in a room a new one will be created.
      *
-     * @param socket The socket to get the Room of
+     * @param socket The socket to get the room of
      *
-     * @return The Room
+     * @return The room the socket was in or the newly created one
      */
     public static getRoom(socket: SocketIO.Socket): Room {
         let room = this.getRoomById(socket.nsp.name);
@@ -40,11 +40,11 @@ export default class RoomService {
     }
 
     /**
-     * Get a Room by its ID
+     * Get a room by its Id.
      *
-     * @param id The Room ID
+     * @param id The room Id
      *
-     * @return The Room or null if it could not be found
+     * @return The room or null if it could not be found
      */
     public static getRoomById(id: string): Room | null {
         for (const room of this.rooms) {

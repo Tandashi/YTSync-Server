@@ -2,13 +2,16 @@ import express from 'express';
 import http from 'http';
 import socketIO from 'socket.io';
 import path from 'path';
+import dotenv from 'dotenv';
 
 import RoomService from './service/room-service';
 import { VideoState, Message } from './model/message';
 import logger from './logger';
 import { Role } from './model/role';
 
-const port = process.env.port || 8080;
+dotenv.config();
+
+const port = process.env.YTSYNC_SERVER_PORT || 8080;
 
 const app = express();
 const server = http.createServer(app);
