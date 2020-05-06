@@ -308,6 +308,7 @@ export class Room {
      *
      * @param socket The socket that should be synced.
      * @param sendQueue If the queue should be send or not.
+     * @param sendPlayVideo If a PLAY_VIDEO with the current video should be send or not.
      */
     public syncClientToRoom(socket: SocketIO.Socket, sendQueue: boolean, sendPlayVideo: boolean): void {
         logger.info(`Syncing client -> socketId: '${socket.id}' | sendQueue: ${sendQueue} | sendPlayVideo: ${sendPlayVideo}`);
