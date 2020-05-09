@@ -13,7 +13,8 @@ export enum Message {
     CLIENT_CONNECT = 'client-connect',
     CLIENT_DISCONNECT = 'client-disconnect',
     PROMOTE = 'promote',
-    UNPROMOTE = 'unpromote'
+    UNPROMOTE = 'unpromote',
+    REACTION = 'reaction'
 }
 
 export enum VideoState {

@@ -47,17 +47,17 @@ io.of(/.*/).on('connection', (socket: SocketIO.Socket) => {
                     case Message.PLAY:
                         room.updateVideoTime(parseFloat(cmdData));
                         room.updateVideoState(VideoState.PLAYING, socket);
-                        break;
+                        return;
                     case Message.PAUSE:
                         room.updateVideoTime(parseFloat(cmdData));
                         room.updateVideoState(VideoState.PAUSED, socket);
-                        break;
+                        return;
                     case Message.PROMOTE:
                         room.changeRoleByClient(room.getClientBySocketId(cmdData), Role.PROMOTED);
-                        break;
+                        return;
                     case Message.UNPROMOTE:
                         room.changeRoleByClient(room.getClientBySocketId(cmdData), Role.MEMBER);
-                        break;
+                        return;
                 }
             }
 
@@ -65,17 +65,23 @@ io.of(/.*/).on('connection', (socket: SocketIO.Socket) => {
                 switch(command) {
                     case Message.AUTOPLAY:
                         room.setAutoplay(cmdData);
-                        break;
+                        return;
                     case Message.PLAY_VIDEO:
                         room.setCurrentVideo(cmdData);
-                        break;
+                        return;
                     case Message.ADD_TO_QUEUE:
                         room.addVideoToQueue(cmdData.videoId, cmdData.title, cmdData.byline);
-                        break;
+                        return;
                     case Message.REMOVE_FROM_QUEUE:
                         room.removeVideoFromQueue(cmdData);
-                        break;
+                        return;
                 }
+            }
+
+            switch(command) {
+                case Message.REACTION:
+                    room.sendToAll(Message.REACTION, cmdData, [socket]);
+                    return;
             }
 
             if(!isHost) {
