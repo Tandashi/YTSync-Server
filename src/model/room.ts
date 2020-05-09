@@ -102,7 +102,7 @@ export class Room {
                     logger.info(`New room (${this.nsp.name}) Host -> socketId: '${client.socket.id}' | Reason: Old one was removed`);
                     // Change his role to HOST
                     this.changeRoleByClient(client, Role.HOST);
-                    return;
+                    break;
                 }
             }
         }
