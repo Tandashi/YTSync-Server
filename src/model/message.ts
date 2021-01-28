@@ -12,7 +12,16 @@ export enum Message {
     CLIENTS = 'clients',
     CLIENT_CONNECT = 'client-connect',
     CLIENT_DISCONNECT = 'client-disconnect',
+    SET_ROLE_MEMBER = 'set-role-member',
+    SET_ROLE_MODERATOR = 'set-role-moderator',
+    SET_ROLE_SUB_HOST = 'set-role-sub-host',
+    /**
+     * @deprecated in favor of {@link SUB_HOST} & {@link MODERATOR} permissions.
+     */
     PROMOTE = 'promote',
+    /**
+     * @deprecated in favor of {@link SUB_HOST} & {@link MODERATOR} permissions.
+     */
     UNPROMOTE = 'unpromote',
     REACTION = 'reaction'
 }

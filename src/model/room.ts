@@ -158,8 +158,27 @@ export class Room {
     }
 
     /**
+     * Check if the given socket is SUB_HOST.
+     *
+     * @param socket The socket to check
+     */
+    public isSubHost(socket: SocketIO.Socket): boolean {
+        return this.getClient(socket).role === Role.SUB_HOST;
+    }
+
+    /**
+     * Check if the given socket is MODERATOR.
+     *
+     * @param socket The socket to check
+     */
+    public isModerator(socket: SocketIO.Socket): boolean {
+        return this.getClient(socket).role === Role.MODERATOR;
+    }
+
+    /**
      * Check if the given socket is PROMOTED.
      *
+     * @deprecated in favor of {@link SUB_HOST} & {@link MODERATOR} permissions.
      * @param socket The socket to check
      */
     public isPromoted(socket: SocketIO.Socket): boolean {
@@ -187,12 +206,17 @@ export class Room {
      * Update the rooms video time.
      *
      * @param time The new room video time
+     * @param shouldNotifyClients Whether clients should be notified about the time update (default: false)
      */
-    public updateVideoTime(time: number): void {
+    public updateVideoTime(time: number, shouldNotifyClients = false): void {
         logger.info(`Updating room (${this.nsp.name}) VideoTime -> '${time}'`);
         this.videoTime = time;
         this.lastTimeUpdate = moment.now();
         logger.info(`Updating room (${this.nsp.name}) LastTimeUpdate -> '${this.lastTimeUpdate}'`);
+
+        if (shouldNotifyClients) {
+            this.sendToAll(Messages.Message.SEEK, this.getVideoTime().toString());
+        }
     }
 
     /**

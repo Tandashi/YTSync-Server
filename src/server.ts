@@ -39,29 +39,55 @@ io.of(/.*/).on('connection', (socket: SocketIO.Socket) => {
             const cmdData = json.data;
 
             const isHost = room.isHost(socket);
-            const isPromoted = room.isPromoted(socket);
+            const isSubHost = room.isSubHost(socket);
+            // check for PROMOTED role to stay backwards compatible as MODERATOR and PROMOTED have the same permissions
+            const isModerator = room.isModerator(socket) || room.isPromoted(socket);
 
-            // Check if socket is host. If not we ignore the send command.
-            if(isHost) {
+            // Check roles of the sender
+            // MEMBER - may send reactions
+            // MODERATOR - may ALSO add to / remove from queue, skip the video and modify the autoplay option
+            // SUB_HOST - may ALSO play / pause the video and seek to another timestamp
+            // HOST - may ALSO change the users roles
+
+            if (isHost) {
                 switch(command) {
-                    case Message.PLAY:
-                        room.updateVideoTime(parseFloat(cmdData));
-                        room.updateVideoState(VideoState.PLAYING, socket);
+                    case Message.SET_ROLE_MEMBER:
+                        room.changeRoleByClient(room.getClientBySocketId(cmdData), Role.MEMBER);
                         return;
-                    case Message.PAUSE:
-                        room.updateVideoTime(parseFloat(cmdData));
-                        room.updateVideoState(VideoState.PAUSED, socket);
+                    case Message.SET_ROLE_MODERATOR:
+                        room.changeRoleByClient(room.getClientBySocketId(cmdData), Role.MODERATOR);
                         return;
+                    case Message.SET_ROLE_SUB_HOST:
+                        room.changeRoleByClient(room.getClientBySocketId(cmdData), Role.SUB_HOST);
+                        return;
+                    // deprecated - backwards compatibility
                     case Message.PROMOTE:
                         room.changeRoleByClient(room.getClientBySocketId(cmdData), Role.PROMOTED);
                         return;
+                    // deprecated - backwards compatibility
                     case Message.UNPROMOTE:
                         room.changeRoleByClient(room.getClientBySocketId(cmdData), Role.MEMBER);
                         return;
                 }
             }
 
-            if (isHost || isPromoted) {
+            if (isHost || isSubHost) {
+                switch (command) {
+                    case Message.PLAY:
+                        room.updateVideoTime(parseFloat(cmdData));
+                        room.updateVideoState(VideoState.PLAYING, socket);
+                        return;
+                    case Message.SEEK:
+                        room.updateVideoTime(parseFloat(cmdData), true);
+                        return;
+                    case Message.PAUSE:
+                        room.updateVideoTime(parseFloat(cmdData));
+                        room.updateVideoState(VideoState.PAUSED, socket);
+                        return;
+                }
+            }
+
+            if (isHost || isSubHost || isModerator) {
                 switch(command) {
                     case Message.AUTOPLAY:
                         room.setAutoplay(cmdData);
@@ -78,18 +104,18 @@ io.of(/.*/).on('connection', (socket: SocketIO.Socket) => {
                 }
             }
 
-            switch(command) {
+            switch (command) {
                 case Message.REACTION:
                     room.sendToAll(Message.REACTION, cmdData, [socket]);
                     return;
             }
 
-            if(!isHost) {
-                // Socket wasnt a host so we need to resync him
+            if (!isHost) {
+                // Socket wasn't a host so we need to resync him
                 room.syncClientToRoom(socket, false, false);
             }
         }
-        catch(e) {
+        catch (e) {
             logger.error(e);
             return;
         }
