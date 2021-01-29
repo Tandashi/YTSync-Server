@@ -1,4 +1,17 @@
-# YTSync Server
+<p align="center">
+  <image src="https://github.com/Tandashi/YTSync-Plugin/blob/master/doc/title.png?raw=true">
+  <br /> 
+  <img src="https://github.com/Tandashi/YTSync-Plugin/workflows/YT%20Sync/badge.svg?branch=master">
+  <img src="https://img.shields.io/github/v/release/Tandashi/YTSync-Plugin">
+</p>
+<p align="center">
+  <a href="https://chrome.google.com/webstore/detail/ytsync/djjmipmoebdhkblgmllkehfghaekbimi">
+    <img src="https://github.com/Tandashi/YTSync-Plugin/blob/master/doc/chrome.png?raw=true">
+  </a>
+  <a href="https://addons.mozilla.org/en-GB/firefox/addon/ytsync/">
+     <img src="https://github.com/Tandashi/YTSync-Plugin/blob/master/doc/mozilla.png?raw=true">
+  </a>
+</p>
 
 The server component for the [YTSync Plugin](https://github.com/Tandashi/YTSync-Plugin). 
 
