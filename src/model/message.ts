@@ -8,6 +8,7 @@ export enum Message {
     PLAY_VIDEO = 'play-video',
     ADD_TO_QUEUE = 'add-to-queue',
     REMOVE_FROM_QUEUE = 'remove-from-queue',
+    EDIT_QUEUE = 'edit-queue',
     QUEUE = 'queue',
     CLIENTS = 'clients',
     CLIENT_CONNECT = 'client-connect',

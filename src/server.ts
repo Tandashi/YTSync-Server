@@ -101,6 +101,9 @@ io.of(/.*/).on('connection', (socket: SocketIO.Socket) => {
                     case Message.REMOVE_FROM_QUEUE:
                         room.removeVideoFromQueue(cmdData);
                         return;
+                    case Message.EDIT_QUEUE:
+                        room.moveToPositionInQueue(cmdData.oldIndex, cmdData.newIndex);
+                        return;
                 }
             }
 

@@ -328,6 +328,22 @@ export class Room {
     }
 
     /**
+     *
+     *
+     * @param oldIndex
+     * @param newIndex
+     */
+    public moveToPositionInQueue(oldIndex: number, newIndex: number): void {
+        if (this.videoQueue.length < newIndex || newIndex < 0) {
+            return;
+        }
+
+        this.videoQueue.splice(newIndex, 0, this.videoQueue.splice(oldIndex, 1)[0])
+
+        this.sendToAll(Messages.Message.QUEUE, { videos: this.videoQueue, video: this.currentVideo });
+    }
+
+    /**
      * Sync the given socket to the room.
      *
      * @param socket The socket that should be synced.
