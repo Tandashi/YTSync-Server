@@ -176,16 +176,6 @@ export class Room {
     }
 
     /**
-     * Check if the given socket is PROMOTED.
-     *
-     * @deprecated in favor of {@link SUB_HOST} & {@link MODERATOR} permissions.
-     * @param socket The socket to check
-     */
-    public isPromoted(socket: SocketIO.Socket): boolean {
-        return this.getClient(socket).role === Role.PROMOTED;
-    }
-
-    /**
      * Update the rooms video state.
      *
      * Will send a VideoState Message to all clients except the one that updated.

@@ -41,7 +41,7 @@ io.of(/.*/).on('connection', (socket: SocketIO.Socket) => {
             const isHost = room.isHost(socket);
             const isSubHost = room.isSubHost(socket);
             // check for PROMOTED role to stay backwards compatible as MODERATOR and PROMOTED have the same permissions
-            const isModerator = room.isModerator(socket) || room.isPromoted(socket);
+            const isModerator = room.isModerator(socket);
 
             // Check roles of the sender
             // MEMBER - may send reactions
@@ -59,14 +59,6 @@ io.of(/.*/).on('connection', (socket: SocketIO.Socket) => {
                         return;
                     case Message.SET_ROLE_SUB_HOST:
                         room.changeRoleByClient(room.getClientBySocketId(cmdData), Role.SUB_HOST);
-                        return;
-                    // deprecated - backwards compatibility
-                    case Message.PROMOTE:
-                        room.changeRoleByClient(room.getClientBySocketId(cmdData), Role.PROMOTED);
-                        return;
-                    // deprecated - backwards compatibility
-                    case Message.UNPROMOTE:
-                        room.changeRoleByClient(room.getClientBySocketId(cmdData), Role.MEMBER);
                         return;
                 }
             }
