@@ -5,7 +5,7 @@
     "rules": {
         "no-console": false,
         "semicolon": [true, "always"],
-        "quotemark": [true, "single", "always"]
+        "quotemark": [true, "single"]
     },
     "rulesDirectory": []
 }
