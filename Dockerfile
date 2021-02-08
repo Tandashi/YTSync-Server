@@ -4,13 +4,11 @@ RUN mkdir -p /home/node/server/node_modules && chown -R node:node /home/node/ser
 
 WORKDIR /home/node/server
 
-COPY package*.json ./
+COPY --chown=node:node . .
 
 USER node
 
 RUN npm install
-
-COPY --chown=node:node . .
 
 EXPOSE 8080
 
