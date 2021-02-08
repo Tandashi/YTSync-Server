@@ -9,6 +9,8 @@ import { VideoState, Message } from './model/message';
 import logger from './logger';
 import { Role } from './model/role';
 
+import routes from './routes/router';
+
 dotenv.config();
 
 const port = process.env.YTSYNC_SERVER_PORT || 8080;
@@ -25,6 +27,7 @@ const io = socketIO(server, {
   cookie: false,
 });
 
+app.use('/', routes);
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
 io.of(/.*/).on('connection', (socket: SocketIO.Socket) => {
