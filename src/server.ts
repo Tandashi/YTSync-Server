@@ -87,6 +87,9 @@ io.of(/.*/).on('connection', (socket: SocketIO.Socket) => {
             room.updateVideoTime(parseFloat(cmdData));
             room.updateVideoState(VideoState.PAUSED, socket);
             return;
+          case Message.SET_PLAYBACK_RATE:
+            room.setPlaybackRate(parseFloat(cmdData));
+            return;
         }
       }
 
