@@ -21,6 +21,8 @@ export class Room {
   private lastTimeUpdate: number = 0;
   // The video time that was syned
   private videoTime: number = 0;
+  // The video play speed
+  private playbackRate: number = 1;
   // If autoplay is enabled
   private autoplay: boolean = true;
 
@@ -234,7 +236,7 @@ export class Room {
     if (this.state === Messages.VideoState.PAUSED) return this.videoTime;
 
     const currentTime = moment.now();
-    return this.videoTime + (currentTime - this.lastTimeUpdate) / 1000;
+    return this.videoTime + ((currentTime - this.lastTimeUpdate) / 1000) * this.playbackRate;
   }
 
   /**
@@ -272,6 +274,19 @@ export class Room {
       `Setting autoplay for room (${this.nsp.name}) -> autoplay: '${autoplay}'`
     );
     this.sendToAll(Messages.Message.AUTOPLAY, this.autoplay);
+  }
+
+  /**
+   * Set the playback speed for video playback
+   *
+   * @param playbackRate The playback speed for the videos
+   */
+  public setPlaybackRate(playbackRate: number) {
+    this.playbackRate = playbackRate;
+    logger.info(
+      `Setting playbackRate for room (${this.nsp.name}) -> playbackRate: '${playbackRate}'`
+    );
+    this.sendToAll(Messages.Message.SET_PLAYBACK_RATE, this.playbackRate);
   }
 
   /**
@@ -383,6 +398,11 @@ export class Room {
       socket,
       Messages.Message.CLIENTS,
       this.clients.map((c) => c.getAsObject())
+    );
+    Messages.sendMessageToSocket(
+      socket,
+      Messages.Message.SET_PLAYBACK_RATE,
+      this.playbackRate
     );
   }
 }
