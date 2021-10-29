@@ -17,6 +17,7 @@ export enum Message {
   SET_ROLE_SUB_HOST = 'set-role-sub-host',
   SET_PLAYBACK_RATE = 'set-playback-rate',
   REACTION = 'reaction',
+  ACTION_LOG = 'action-log',
 }
 
 export enum VideoState {
@@ -31,20 +32,12 @@ export enum VideoState {
  * @param type The type of the message
  * @param data The data of the message
  */
-export function sendMessageToSocket(
-  socket: SocketIO.Socket,
-  type: Message,
-  data: any
-): void {
+export function sendMessageToSocket(socket: SocketIO.Socket, type: Message, data: any): void {
   const message = {
     action: type,
     data,
   };
-  logger.info(
-    `Sending Message (${JSON.stringify(message)}) to Socket -> socketId: ${
-      socket.id
-    }`
-  );
+  logger.info(`Sending Message (${JSON.stringify(message)}) to Socket -> socketId: ${socket.id}`);
   socket.emit('message', JSON.stringify(message));
 }
 
@@ -55,9 +48,7 @@ export function sendMessageToSocket(
  *
  * @return The Message type of undefined if there is no Message type the the VideoState
  */
-export function getMessageFromVideoState(
-  state: VideoState
-): Message | undefined {
+export function getMessageFromVideoState(state: VideoState): Message | undefined {
   switch (state) {
     case VideoState.PLAYING:
       return Message.PLAY;

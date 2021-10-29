@@ -5,6 +5,7 @@ import path from 'path';
 import dotenv from 'dotenv';
 
 import RoomService from './service/room-service';
+import ActionLogSerivce from './service/action-log-service';
 import { VideoState, Message } from './model/message';
 import logger from './logger';
 import { Role } from './model/role';
@@ -45,6 +46,8 @@ io.of(/.*/).on('connection', (socket: SocketIO.Socket) => {
       const isSubHost = room.isSubHost(socket);
       const isModerator = room.isModerator(socket);
 
+      const client = room.getClient(socket);
+
       // Check roles of the sender
       // MEMBER - may send reactions
       // MODERATOR - may ALSO add to / remove from queue, skip the video and modify the autoplay option
@@ -52,43 +55,82 @@ io.of(/.*/).on('connection', (socket: SocketIO.Socket) => {
       // HOST - may ALSO change the users roles
 
       if (isHost) {
+        const targetClient = room.getClientBySocketId(cmdData);
+
         switch (command) {
           case Message.SET_ROLE_MEMBER:
             room.changeRoleByClient(
-              room.getClientBySocketId(cmdData),
+              targetClient,
               Role.MEMBER
+            );
+            ActionLogSerivce.sendActionLogMessage(
+              room,
+              client,
+              `Set role for ${targetClient.name} to Member`
             );
             return;
           case Message.SET_ROLE_MODERATOR:
             room.changeRoleByClient(
-              room.getClientBySocketId(cmdData),
+              targetClient,
               Role.MODERATOR
+            );
+            ActionLogSerivce.sendActionLogMessage(
+              room,
+              client,
+              `Set role for ${targetClient.name} to Moderator`
             );
             return;
           case Message.SET_ROLE_SUB_HOST:
             room.changeRoleByClient(
-              room.getClientBySocketId(cmdData),
+              targetClient,
               Role.SUB_HOST
+            );
+            ActionLogSerivce.sendActionLogMessage(
+              room,
+              client,
+              `Set role for ${targetClient.name} to SubHost`
             );
             return;
         }
       }
 
       if (isHost || isSubHost) {
+        const parsedCmdData = parseFloat(cmdData);
+
         switch (command) {
           case Message.PLAY:
-            room.updateVideoTime(parseFloat(cmdData));
+            room.updateVideoTime(parsedCmdData);
             room.updateVideoState(VideoState.PLAYING, socket);
-            return;
-          case Message.SEEK:
-            room.updateVideoTime(parseFloat(cmdData), true);
+            ActionLogSerivce.sendActionLogMessage(
+              room,
+              client,
+              `Resumed the playback`
+            );
             return;
           case Message.PAUSE:
-            room.updateVideoTime(parseFloat(cmdData));
+            room.updateVideoTime(parsedCmdData);
             room.updateVideoState(VideoState.PAUSED, socket);
+            ActionLogSerivce.sendActionLogMessage(
+              room,
+              client,
+              `Paused the playback`
+            );
+            return;
+          case Message.SEEK:
+            room.updateVideoTime(parsedCmdData, true);
+            ActionLogSerivce.sendActionLogMessage(
+              room,
+              client,
+              `Seeked to ${parsedCmdData}`
+            );
             return;
           case Message.SET_PLAYBACK_RATE:
-            room.setPlaybackRate(parseFloat(cmdData));
+            room.setPlaybackRate(parsedCmdData);
+            ActionLogSerivce.sendActionLogMessage(
+              room,
+              client,
+              `Set the playback speed to ${parsedCmdData}`
+            );
             return;
         }
       }
@@ -97,9 +139,19 @@ io.of(/.*/).on('connection', (socket: SocketIO.Socket) => {
         switch (command) {
           case Message.AUTOPLAY:
             room.setAutoplay(cmdData);
+            ActionLogSerivce.sendActionLogMessage(
+              room,
+              client,
+              `Set autoplay to ${cmdData}`
+            );
             return;
           case Message.PLAY_VIDEO:
             room.setCurrentVideo(cmdData);
+            ActionLogSerivce.sendActionLogMessage(
+              room,
+              client,
+              `Started to play video ${cmdData}`
+            );
             return;
           case Message.ADD_TO_QUEUE:
             room.addVideoToQueue(
@@ -107,9 +159,19 @@ io.of(/.*/).on('connection', (socket: SocketIO.Socket) => {
               cmdData.title,
               cmdData.byline
             );
+            ActionLogSerivce.sendActionLogMessage(
+              room,
+              client,
+              `Added to Queue ${cmdData.title}`
+            );
             return;
           case Message.REMOVE_FROM_QUEUE:
             room.removeVideoFromQueue(cmdData);
+            ActionLogSerivce.sendActionLogMessage(
+              room,
+              client,
+              `Removed video from Queue`
+            );
             return;
         }
       }
