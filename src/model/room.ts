@@ -124,9 +124,7 @@ export class Room {
    * @param role The new role
    */
   public changeRoleByClient(client: Client, role: Role): void {
-    logger.info(
-      `Changed role of client in room (${this.nsp.name}) -> socketId: '${client.socket.id}' | role: ${role}`
-    );
+    logger.info(`Changed role of client in room (${this.nsp.name}) -> socketId: '${client.socket.id}' | role: ${role}`);
     client.role = role;
     this.sendToAll(
       Messages.Message.CLIENTS,
@@ -141,11 +139,7 @@ export class Room {
    * @param data The data of the message
    * @param except A list of sockets that should not receive the message
    */
-  public sendToAll(
-    type: Messages.Message,
-    data: any,
-    except: SocketIO.Socket[] = []
-  ): void {
+  public sendToAll(type: Messages.Message, data: any, except: SocketIO.Socket[] = []): void {
     this.clients.forEach((c) => {
       if (!except.includes(c.socket)) {
         Messages.sendMessageToSocket(c.socket, type, data);
@@ -188,6 +182,24 @@ export class Room {
   }
 
   /**
+   * Is the video currently playing
+   *
+   * @returns if video is currently playing
+   */
+  public isVideoPlaying(): boolean {
+    return this.state === Messages.VideoState.PLAYING;
+  }
+
+  /**
+   * Is the video currently paused
+   *
+   * @returns if video is currently paused
+   */
+  public isVideoPaused(): boolean {
+    return this.state === Messages.VideoState.PAUSED;
+  }
+
+  /**
    * Update the rooms video state.
    *
    * Will send a VideoState Message to all clients except the one that updated.
@@ -195,13 +207,8 @@ export class Room {
    * @param state The new room VideoState
    * @param socket The socket that wants to update the video state
    */
-  public updateVideoState(
-    state: Messages.VideoState,
-    socket: SocketIO.Socket
-  ): void {
-    logger.info(
-      `Updating room (${this.nsp.name}) VideoState -> '${this.state}' => '${state}'`
-    );
+  public updateVideoState(state: Messages.VideoState, socket: SocketIO.Socket): void {
+    logger.info(`Updating room (${this.nsp.name}) VideoState -> '${this.state}' => '${state}'`);
     this.state = state;
 
     const message = Messages.getMessageFromVideoState(this.state);
@@ -219,9 +226,7 @@ export class Room {
     logger.info(`Updating room (${this.nsp.name}) VideoTime -> '${time}'`);
     this.videoTime = time;
     this.lastTimeUpdate = moment.now();
-    logger.info(
-      `Updating room (${this.nsp.name}) LastTimeUpdate -> '${this.lastTimeUpdate}'`
-    );
+    logger.info(`Updating room (${this.nsp.name}) LastTimeUpdate -> '${this.lastTimeUpdate}'`);
 
     if (shouldNotifyClients) {
       this.sendToAll(Messages.Message.SEEK, this.getVideoTime().toString());
@@ -257,9 +262,7 @@ export class Room {
     if (entries.length === 0) return;
 
     this.currentVideo = entries[0];
-    logger.info(
-      `Setting current video for room (${this.nsp.name}) -> videoId: '${videoId}'`
-    );
+    logger.info(`Setting current video for room (${this.nsp.name}) -> videoId: '${videoId}'`);
     this.sendToAll(Messages.Message.PLAY_VIDEO, this.currentVideo.videoId);
   }
 
@@ -270,9 +273,7 @@ export class Room {
    */
   public setAutoplay(autoplay: boolean) {
     this.autoplay = autoplay;
-    logger.info(
-      `Setting autoplay for room (${this.nsp.name}) -> autoplay: '${autoplay}'`
-    );
+    logger.info(`Setting autoplay for room (${this.nsp.name}) -> autoplay: '${autoplay}'`);
     this.sendToAll(Messages.Message.AUTOPLAY, this.autoplay);
   }
 
@@ -283,9 +284,7 @@ export class Room {
    */
   public setPlaybackRate(playbackRate: number) {
     this.playbackRate = playbackRate;
-    logger.info(
-      `Setting playbackRate for room (${this.nsp.name}) -> playbackRate: '${playbackRate}'`
-    );
+    logger.info(`Setting playbackRate for room (${this.nsp.name}) -> playbackRate: '${playbackRate}'`);
     this.sendToAll(Messages.Message.SET_PLAYBACK_RATE, this.playbackRate);
   }
 
@@ -342,9 +341,7 @@ export class Room {
     );
     this.videoQueue = reduced.queue;
 
-    logger.info(
-      `Removed video from room (${this.nsp.name}) queue -> videoId: '${videoId}'`
-    );
+    logger.info(`Removed video from room (${this.nsp.name}) queue -> videoId: '${videoId}'`);
     this.sendToAll(Messages.Message.REMOVE_FROM_QUEUE, reduced.el);
 
     // Check if the current video is the one we deleted.
@@ -361,11 +358,7 @@ export class Room {
    * @param sendQueue If the queue should be send or not.
    * @param sendPlayVideo If a PLAY_VIDEO with the current video should be send or not.
    */
-  public syncClientToRoom(
-    socket: SocketIO.Socket,
-    sendQueue: boolean,
-    sendPlayVideo: boolean
-  ): void {
+  public syncClientToRoom(socket: SocketIO.Socket, sendQueue: boolean, sendPlayVideo: boolean): void {
     logger.info(
       `Syncing client -> socketId: '${socket.id}' | sendQueue: ${sendQueue} | sendPlayVideo: ${sendPlayVideo}`
     );
@@ -378,31 +371,19 @@ export class Room {
         });
       }
       if (sendPlayVideo) {
-        Messages.sendMessageToSocket(
-          socket,
-          Messages.Message.PLAY_VIDEO,
-          this.currentVideo.videoId
-        );
+        Messages.sendMessageToSocket(socket, Messages.Message.PLAY_VIDEO, this.currentVideo.videoId);
       }
     }
 
     const message = Messages.getMessageFromVideoState(this.state);
     const videoTime = this.getVideoTime().toString();
     Messages.sendMessageToSocket(socket, message, videoTime);
-    Messages.sendMessageToSocket(
-      socket,
-      Messages.Message.AUTOPLAY,
-      this.autoplay
-    );
+    Messages.sendMessageToSocket(socket, Messages.Message.AUTOPLAY, this.autoplay);
     Messages.sendMessageToSocket(
       socket,
       Messages.Message.CLIENTS,
       this.clients.map((c) => c.getAsObject())
     );
-    Messages.sendMessageToSocket(
-      socket,
-      Messages.Message.SET_PLAYBACK_RATE,
-      this.playbackRate
-    );
+    Messages.sendMessageToSocket(socket, Messages.Message.SET_PLAYBACK_RATE, this.playbackRate);
   }
 }

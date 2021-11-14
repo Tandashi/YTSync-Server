@@ -59,37 +59,16 @@ io.of(/.*/).on('connection', (socket: SocketIO.Socket) => {
 
         switch (command) {
           case Message.SET_ROLE_MEMBER:
-            room.changeRoleByClient(
-              targetClient,
-              Role.MEMBER
-            );
-            ActionLogSerivce.sendActionLogMessage(
-              room,
-              client,
-              `Set role for ${targetClient.name} to Member`
-            );
+            room.changeRoleByClient(targetClient, Role.MEMBER);
+            ActionLogSerivce.sendActionLogMessage(room, client, `Set role for ${targetClient.name} to Member`);
             return;
           case Message.SET_ROLE_MODERATOR:
-            room.changeRoleByClient(
-              targetClient,
-              Role.MODERATOR
-            );
-            ActionLogSerivce.sendActionLogMessage(
-              room,
-              client,
-              `Set role for ${targetClient.name} to Moderator`
-            );
+            room.changeRoleByClient(targetClient, Role.MODERATOR);
+            ActionLogSerivce.sendActionLogMessage(room, client, `Set role for ${targetClient.name} to Moderator`);
             return;
           case Message.SET_ROLE_SUB_HOST:
-            room.changeRoleByClient(
-              targetClient,
-              Role.SUB_HOST
-            );
-            ActionLogSerivce.sendActionLogMessage(
-              room,
-              client,
-              `Set role for ${targetClient.name} to SubHost`
-            );
+            room.changeRoleByClient(targetClient, Role.SUB_HOST);
+            ActionLogSerivce.sendActionLogMessage(room, client, `Set role for ${targetClient.name} to SubHost`);
             return;
         }
       }
@@ -100,37 +79,31 @@ io.of(/.*/).on('connection', (socket: SocketIO.Socket) => {
         switch (command) {
           case Message.PLAY:
             room.updateVideoTime(parsedCmdData);
+
+            if (room.isVideoPlaying()) {
+              return;
+            }
+
             room.updateVideoState(VideoState.PLAYING, socket);
-            ActionLogSerivce.sendActionLogMessage(
-              room,
-              client,
-              `Resumed the playback`
-            );
+            ActionLogSerivce.sendActionLogMessage(room, client, `Resumed the playback`);
             return;
           case Message.PAUSE:
             room.updateVideoTime(parsedCmdData);
+
+            if (room.isVideoPaused()) {
+              return;
+            }
+
             room.updateVideoState(VideoState.PAUSED, socket);
-            ActionLogSerivce.sendActionLogMessage(
-              room,
-              client,
-              `Paused the playback`
-            );
+            ActionLogSerivce.sendActionLogMessage(room, client, `Paused the playback`);
             return;
           case Message.SEEK:
             room.updateVideoTime(parsedCmdData, true);
-            ActionLogSerivce.sendActionLogMessage(
-              room,
-              client,
-              `Seeked to ${parsedCmdData}`
-            );
+            ActionLogSerivce.sendActionLogMessage(room, client, `Seeked to ${parsedCmdData}`);
             return;
           case Message.SET_PLAYBACK_RATE:
             room.setPlaybackRate(parsedCmdData);
-            ActionLogSerivce.sendActionLogMessage(
-              room,
-              client,
-              `Set the playback speed to ${parsedCmdData}`
-            );
+            ActionLogSerivce.sendActionLogMessage(room, client, `Set the playback speed to ${parsedCmdData}`);
             return;
         }
       }
@@ -139,39 +112,19 @@ io.of(/.*/).on('connection', (socket: SocketIO.Socket) => {
         switch (command) {
           case Message.AUTOPLAY:
             room.setAutoplay(cmdData);
-            ActionLogSerivce.sendActionLogMessage(
-              room,
-              client,
-              `Set autoplay to ${cmdData}`
-            );
+            ActionLogSerivce.sendActionLogMessage(room, client, `Set autoplay to ${cmdData}`);
             return;
           case Message.PLAY_VIDEO:
             room.setCurrentVideo(cmdData);
-            ActionLogSerivce.sendActionLogMessage(
-              room,
-              client,
-              `Started to play video ${cmdData}`
-            );
+            ActionLogSerivce.sendActionLogMessage(room, client, `Started to play video ${cmdData}`);
             return;
           case Message.ADD_TO_QUEUE:
-            room.addVideoToQueue(
-              cmdData.videoId,
-              cmdData.title,
-              cmdData.byline
-            );
-            ActionLogSerivce.sendActionLogMessage(
-              room,
-              client,
-              `Added to Queue ${cmdData.title}`
-            );
+            room.addVideoToQueue(cmdData.videoId, cmdData.title, cmdData.byline);
+            ActionLogSerivce.sendActionLogMessage(room, client, `Added to Queue ${cmdData.title}`);
             return;
           case Message.REMOVE_FROM_QUEUE:
             room.removeVideoFromQueue(cmdData);
-            ActionLogSerivce.sendActionLogMessage(
-              room,
-              client,
-              `Removed video from Queue`
-            );
+            ActionLogSerivce.sendActionLogMessage(room, client, `Removed video from Queue`);
             return;
         }
       }
