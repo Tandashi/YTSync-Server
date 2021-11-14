@@ -1,0 +1,9 @@
+version: '3.1'
+services:
+  syncserver:
+    container_name: 'YT_Sync_Server'
+    image: 'yt-sync-server:latest'
+    build: .
+    restart: always
+    ports:
+      - 9940:8080
